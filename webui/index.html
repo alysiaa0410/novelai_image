@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovelAI Image - 配置面板</title>
+  <style>
+    :root {
+      --bg: #1a1625;
+      --panel: rgba(30, 25, 45, 0.95);
+      --ink: #e8e4f0;
+      --muted: #8b82a0;
+      --line: rgba(255, 255, 255, 0.08);
+      --accent: #a78bfa;
+      --accent-2: #34d399;
+      --accent-3: #fbbf24;
+      --danger: #f87171;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--ink);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .btn-danger {
+      background: rgba(248, 113, 113, 0.2);
+      color: var(--danger);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .preview-box {
+      min-height: 400px;
+      border: 2px dashed var(--line);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .preview-box img {
+      max-width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+    }
+
+    .preview-placeholder {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .status-info {
+      background: rgba(167, 139, 250, 0.15);
+      color: var(--accent);
+    }
+
+    .status-success {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--accent-2);
+    }
+
+    .status-error {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--danger);
+    }
+
+    .config-section {
+      background: rgba(167, 139, 250, 0.08);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>NovelAI Image</h1>
+    <p class="subtitle">NovelAI 文生图配置与测试面板</p>
+
+    <div class="card">
+      <div class="card-title">API 配置</div>
+      <div class="form-group">
+        <label for="baseUrl">API 地址</label>
+        <input type="text" id="baseUrl" placeholder="https://api.novelai.net" />
+        <p class="info-text">NovelAI 官方 API 或第三方中转服务地址</p>
+      </div>
+      <div class="form-group">
+        <label for="apiKey">API Key</label>
+        <input type="password" id="apiKey" placeholder="输入你的 NovelAI API Key" />
+        <p class="info-text">从 <a href="https://novelai.net" style="color: var(--accent);">novelai.net</a> 获取</p>
+      </div>
+      <div class="form-group">
+        <label for="model">模型</label>
+        <select id="model">
+          <option value="nai-diffusion-4-5-full">NAI Diffusion 4.5 Full</option>
+          <option value="nai-diffusion-4-5">NAI Diffusion 4.5</option>
+          <option value="nai-diffusion-3">NAI Diffusion 3</option>
+          <option value="anime">Anime (旧版)</option>
+          <option value="furry">Furry</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">生图参数</div>
+      <div class="row">
+        <div class="form-group">
+          <label for="width">宽度</label>
+          <input type="number" id="width" value="832" min="64" step="64" />
+        </div>
+        <div class="form-group">
+          <label for="height">高度</label>
+          <input type="number" id="height" value="1216" min="64" step="64" />
+        </div>
+        <div class="form-group">
+          <label for="steps">步数</label>
+          <input type="number" id="steps" value="28" min="1" max="50" />
+        </div>
+        <div class="form-group">
+          <label for="scale">引导系数</label>
+          <input type="number" id="scale" value="5" min="1" max="15" step="0.5" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="sampler">采样器</label>
+        <select id="sampler">
+          <option value="k_euler_ancestral">K-Euler Ancestral (推荐)</option>
+          <option value="k_euler">K-Euler</option>
+          <option value="k_dpmpp_2m">K-DPM++ 2M</option>
+          <option value="ddim">DDIM</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">提示词</div>
+      <div class="form-group">
+        <label for="prompt">正向提示词 (Prompt)</label>
+        <textarea id="prompt" placeholder="例如: 1girl, solo, white hair, blue eyes, smile, high quality"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="negativePrompt">负向提示词 (Negative Prompt)</label>
+        <textarea id="negativePrompt" placeholder="例如: lowres, bad anatomy, blurry, watermark"></textarea>
+        <p class="info-text">留空将使用默认负向提示词</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">预览</div>
+      <div class="preview-box" id="previewBox">
+        <span class="preview-placeholder">点击"生成图片"开始测试</span>
+      </div>
+      <div id="statusBox"></div>
+      <div class="btn-group">
+        <button class="btn-primary" id="generateBtn">生成图片</button>
+        <button class="btn-secondary" id="clearBtn">清空</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const previewBox = $('previewBox');
+    const statusBox = $('statusBox');
+    const generateBtn = $('generateBtn');
+
+    function setStatus(message, type = 'info') {
+      statusBox.innerHTML = `<div class="status status-${type}">${message}</div>`;
+    }
+
+    function setLoading(loading) {
+      generateBtn.disabled = loading;
+      generateBtn.textContent = loading ? '生成中...' : '生成图片';
+    }
+
+    $('generateBtn').addEventListener('click', async () => {
+      const apiKey = $('apiKey').value.trim();
+      const baseUrl = $('baseUrl').value.trim() || 'https://api.novelai.net';
+      const prompt = $('prompt').value.trim();
+      const negativePrompt = $('negativePrompt').value.trim();
+
+      if (!apiKey) {
+        setStatus('请输入 API Key', 'error');
+        return;
+      }
+
+      if (!prompt) {
+        setStatus('请输入提示词', 'error');
+        return;
+      }
+
+      setLoading(true);
+      setStatus('正在生成图片，请稍候...', 'info');
+      previewBox.innerHTML = '<span class="preview-placeholder">生成中...</span>';
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api_key: apiKey,
+            base_url: baseUrl,
+            model: $('model').value,
+            prompt: prompt,
+            negative_prompt: negativePrompt,
+            width: parseInt($('width').value),
+            height: parseInt($('height').value),
+            steps: parseInt($('steps').value),
+            scale: parseFloat($('scale').value),
+            sampler: $('sampler').value,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          setStatus(`生成失败: ${data.error || '未知错误'}`, 'error');
+          previewBox.innerHTML = '<span class="preview-placeholder">生成失败</span>';
+          return;
+        }
+
+        previewBox.innerHTML = `<img src="${data.image}" alt="Generated Image" />`;
+        setStatus('图片生成成功!', 'success');
+      } catch (error) {
+        setStatus(`请求失败: ${error.message}`, 'error');
+        previewBox.innerHTML = '<span class="preview-placeholder">请求失败</span>';
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    $('clearBtn').addEventListener('click', () => {
+      $('prompt').value = '';
+      $('negativePrompt').value = '';
+      previewBox.innerHTML = '<span class="preview-placeholder">点击"生成图片"开始测试</span>';
+      statusBox.innerHTML = '';
+    });
+  </script>
+</body>
+</html>

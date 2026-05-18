@@ -1,0 +1,36 @@
+{
+  "name": "novelai_image",
+  "version": "1.0.0",
+  "description": "NovelAI 文生图插件 - 支持自定义 API Key 和 URL，生成高质量二次元图片。",
+  "author": "满月月",
+  "categories": ["tool"],
+  "tags": ["novelai", "image", "文生图", "API"],
+  "dependencies": {
+    "plugins": [],
+    "components": []
+  },
+  "include": [
+    {
+      "component_type": "service",
+      "component_name": "novelai_image",
+      "dependencies": [],
+      "enabled": true
+    },
+    {
+      "component_type": "action",
+      "component_name": "generate_image",
+      "dependencies": ["novelai_image:service:novelai_image"],
+      "enabled": true
+    },
+    {
+      "component_type": "router",
+      "component_name": "webui",
+      "dependencies": [],
+      "enabled": true
+    }
+  ],
+  "entry_point": "plugin.py",
+  "min_core_version": "1.0.0",
+  "python_dependencies": ["httpx"],
+  "dependencies_required": true
+}
