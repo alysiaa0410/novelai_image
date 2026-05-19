@@ -206,47 +206,78 @@ class NovelAIImageService(BaseService):
         }
         url = f"{config.api.base_url.rstrip('/')}/ai/generate-image"
 
-        try:
-            async with httpx.AsyncClient(timeout=config.api.timeout) as client:
-                resp = await client.post(url, json=payload, headers=headers)
-                
-                # 记录详细响应信息用于调试
-                logger.debug(f"NovelAI API 响应状态码: {resp.status_code}")
-                logger.debug(f"NovelAI API 响应内容前500字符: {resp.text[:500]}")
+        max_retries = 3
+        retryable_codes = {500, 502, 503, 504}
 
-                if not resp.is_success:
-                    logger.warning(f"NovelAI API 错误: {resp.status_code}, 响应: {resp.text[:500]}")
-                    return None
+        for attempt in range(max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=config.api.timeout) as client:
+                    resp = await client.post(url, json=payload, headers=headers)
 
-                raw_data = resp.content
-                if not raw_data:
-                    logger.warning("NovelAI 返回了空响应")
-                    return None
+                    # 记录详细响应信息用于调试
+                    logger.debug(f"NovelAI API 响应状态码: {resp.status_code}")
+                    logger.debug(f"NovelAI API 响应内容前500字符: {resp.text[:500]}")
 
-                # 从响应中提取图片（支持 ZIP 压缩包或直接返回的图片）
-                image_result = _extract_image_from_response(raw_data)
-                if image_result is None:
-                    logger.warning("NovelAI 返回的数据无法解析为图片")
-                    return None
+                    if not resp.is_success:
+                        if resp.status_code in retryable_codes and attempt < max_retries - 1:
+                            wait_time = (attempt + 1) * 2 + random.uniform(0, 1)
+                            logger.warning(
+                                f"NovelAI API 错误: {resp.status_code}, "
+                                f"将在 {wait_time:.1f} 秒后重试 (尝试 {attempt + 1}/{max_retries})"
+                            )
+                            await asyncio.sleep(wait_time)
+                            continue
+                        logger.warning(f"NovelAI API 错误: {resp.status_code}, 响应: {resp.text[:500]}")
+                        return None
 
-                image_bytes, image_fmt = image_result
-                b64_data = base64.b64encode(image_bytes).decode()
-                self._save_cache(image_bytes, image_fmt, config)
-                logger.debug(f"NovelAI 生图成功，格式={image_fmt}，大小={len(image_bytes)}字节")
-                return b64_data
+                    raw_data = resp.content
+                    if not raw_data:
+                        logger.warning("NovelAI 返回了空响应")
+                        return None
 
-        except httpx.HTTPStatusError as e:
-            logger.warning(f"NovelAI HTTP 错误: {e.response.status_code}, 内容: {e.response.text[:500]}")
-            if e.response.status_code == 401:
-                logger.warning("NovelAI API Key 无效或已过期")
-            elif e.response.status_code == 400:
-                logger.warning("请求参数错误，请检查 prompt 和模型配置")
-            elif e.response.status_code == 429:
-                logger.warning("NovelAI 请求过于频繁，请稍后重试")
-            return None
-        except httpx.RequestError as e:
-            logger.warning(f"NovelAI 请求失败: {e}")
-            return None
+                    # 从响应中提取图片（支持 ZIP 压缩包或直接返回的图片）
+                    image_result = _extract_image_from_response(raw_data)
+                    if image_result is None:
+                        logger.warning("NovelAI 返回的数据无法解析为图片")
+                        return None
+
+                    image_bytes, image_fmt = image_result
+                    b64_data = base64.b64encode(image_bytes).decode()
+                    self._save_cache(image_bytes, image_fmt, config)
+                    logger.debug(f"NovelAI 生图成功，格式={image_fmt}，大小={len(image_bytes)}字节")
+                    return b64_data
+
+            except httpx.HTTPStatusError as e:
+                error_text = e.response.text[:500] if e.response.text else "No response body"
+                if e.response.status_code in retryable_codes and attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2 + random.uniform(0, 1)
+                    logger.warning(
+                        f"NovelAI HTTP 错误: {e.response.status_code}, "
+                        f"将在 {wait_time:.1f} 秒后重试 (尝试 {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue
+                logger.warning(f"NovelAI HTTP 错误: {e.response.status_code}, 内容: {error_text}")
+                if e.response.status_code == 401:
+                    logger.warning("NovelAI API Key 无效或已过期")
+                elif e.response.status_code == 400:
+                    logger.warning("请求参数错误，请检查 prompt 和模型配置")
+                elif e.response.status_code == 429:
+                    logger.warning("NovelAI 请求过于频繁，请稍后重试")
+                return None
+            except httpx.RequestError as e:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2 + random.uniform(0, 1)
+                    logger.warning(
+                        f"NovelAI 请求失败: {e}, "
+                        f"将在 {wait_time:.1f} 秒后重试 (尝试 {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue
+                logger.warning(f"NovelAI 请求失败: {e}")
+                return None
+
+        return None
 
     def _save_cache(self, image_bytes: bytes, fmt: str, config: "NovelAIImageConfig") -> None:
         """将图片保存到本地缓存。"""
