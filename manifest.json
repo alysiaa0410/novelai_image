@@ -1,6 +1,6 @@
 {
   "name": "novelai_image",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NovelAI 文生图插件 - 支持自定义 API Key 和 URL，生成高质量二次元图片。",
   "author": "满月月",
   "categories": ["tool"],
